@@ -8,7 +8,7 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - storage_postgres:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     environment:
       - POSTGRES_DB=${DB_NAME_STATS:?err}
       - POSTGRES_USER=${DB_USER_STATS:?err}
