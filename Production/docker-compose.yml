@@ -1,0 +1,63 @@
+version: '3'
+
+services:
+  postgres:
+    container_name: postgres
+    image: postgres
+    restart: unless-stopped
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - stack.env
+    networks:
+      - external_network
+    labels:
+      - traefik.enable=true
+      - traefik.tcp.routers.postgres.entrypoints=postgres
+      - traefik.tcp.routers.postgres.rule=HostSNI(`*`)
+      - traefik.tcp.routers.postgres.tls=false
+      - traefik.tcp.services.postgres.loadbalancer.server.port=5432
+      - traefik.tcp.routers.postgres.service=postgres
+      
+  redis:
+    container_name: redis
+    image: redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - external_network
+    labels:
+      - traefik.enable=true
+      - traefik.tcp.routers.redis.entrypoints=redis
+      - traefik.tcp.routers.redis.rule=HostSNI(`*`)
+      - traefik.tcp.routers.redis.tls=false
+      - traefik.tcp.services.redis.loadbalancer.server.port=6379
+      - traefik.tcp.routers.redis.service=redis
+
+  mongo:
+    container_name: mongo
+    image: mongo
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data
+    env_file:
+      - stack.env
+    networks:
+      - external_network
+    labels:
+      - traefik.enable=true
+      - traefik.tcp.routers.mongo.entrypoints=mongo
+      - traefik.tcp.routers.mongo.rule=HostSNI(`*`)
+      - traefik.tcp.routers.mongo.tls=false
+      - traefik.tcp.services.mongo.loadbalancer.server.port=27017
+      - traefik.tcp.routers.mongo.service=mongo
+
+volumes:
+  postgres_data:
+  redis_data:
+  mongo_data:
+  
+networks:
+  external_network:
+    external: true
