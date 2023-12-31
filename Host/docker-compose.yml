@@ -1,4 +1,4 @@
-version: '3.9'
+version: '3'
 
 services:
   traefik:
@@ -33,6 +33,8 @@ services:
       - --metrics.influxdb2.token=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
       - --metrics.influxdb2.org=RVRB
       - --metrics.influxdb2.bucket=RVRB
+      - --experimental.plugins.jwt.moduleName=github.com/team-carepay/traefik-jwt-plugin
+      - --experimental.plugins.jwt.version=v0.6.0
     env_file:
       - .env
     networks:
@@ -54,6 +56,7 @@ services:
       - traefik.http.routers.traefik.service=api@internal
       - traefik.http.routers.traefik.middlewares=authtraefik
       - traefik.http.middlewares.authtraefik.basicauth.users=${TRAEFIK_DASHBOARD_USER}:${TRAEFIK_DASHBOARD_PASSWORD}
+      - "traefik.http.middlewares.jwt-plugin.plugin.jwt.Keys[0]=${SSL_CERT}"
 
   portainer:
     container_name: portainer
