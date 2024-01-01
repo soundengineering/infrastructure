@@ -56,7 +56,12 @@ services:
       - traefik.http.routers.traefik.service=api@internal
       - traefik.http.routers.traefik.middlewares=authtraefik
       - traefik.http.middlewares.authtraefik.basicauth.users=${TRAEFIK_DASHBOARD_USER}:${TRAEFIK_DASHBOARD_PASSWORD}
-      - "traefik.http.middlewares.jwt-plugin.plugin.jwt.Keys[0]=${SSL_CERT}"
+      - "traefik.http.middlewares.jwt-plugin.plugin.jwt.Keys[0]=${PUBLIC_KEY}"
+      - traefik.http.middlewares.jwt-plugin.plugin.jwt.JwtHeaders.X-User-Id=_id
+      - traefik.http.middlewares.jwt-plugin.plugin.jwt.JwtHeaders.X-Spotify-Uri=spotifyUri
+      - traefik.http.middlewares.jwt-plugin.plugin.jwt.JwtHeaders.X-Spotify-Token=spotifyToken
+      - traefik.http.middlewares.jwt-plugin.plugin.jwt.JwtHeaders.X-Spotify-Token-Expires=spotifyTokenExpires
+      - traefik.http.middlewares.jwt-plugin.plugin.jwt.JwtHeaders.X-Country=country
 
   portainer:
     container_name: portainer
@@ -136,7 +141,6 @@ services:
       - external_network
     env_file:
       - ./.env
-
 
 volumes:
   portainer_data:
