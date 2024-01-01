@@ -53,6 +53,16 @@ services:
       - traefik.tcp.services.mongo.loadbalancer.server.port=27017
       - traefik.tcp.routers.mongo.service=mongo
 
+  whoami:
+    image: traefik/whoami
+    networks:
+      - external_network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.whoami.rule=Host(`whoami.${ROOT_DOMAIN}`)
+      - traefik.http.routers.whoami.middlewares=jwt-plugin
+      - traefik.http.routers.whoami.entrypoints=websecure
+
 volumes:
   postgres_data:
   redis_data:
