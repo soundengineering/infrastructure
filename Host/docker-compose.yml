@@ -9,7 +9,7 @@ services:
       - --providers.docker
       - --providers.docker.exposedbydefault=false
       - --api
-      # - --log.level=DEBUG
+      - --log.level=DEBUG
       - --certificatesresolvers.letsencrypt.acme.dnschallenge=true
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.resolvers=${CERTIFICATE_DNS_RESOLVERS}
       - --certificatesresolvers.letsencrypt.acme.dnschallenge.disablePropagationCheck=true
@@ -141,6 +141,26 @@ services:
       - external_network
     env_file:
       - ./.env
+
+  watchtower:
+    container_name: watchtower
+    image: containrrr/watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - external_network
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_REMOVE_VOLUMES=true
+      - WATCHTOWER_HTTP_API_UPDATE=true
+      - WATCHTOWER_HTTP_API_TOKEN=${WATCHTOWER_HTTP_API_TOKEN}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.watchtower.rule=host(`watchtower.${ROOT_DOMAIN}`)
+      - traefik.http.routers.watchtower.entryPoints=websecure
+      - traefik.http.routers.watchtower.tls.certResolver=letsencrypt
+      - traefik.http.services.watchtower.loadBalancer.server.port=8080
 
 volumes:
   portainer_data:
