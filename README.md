@@ -104,3 +104,28 @@ Password to provide access to Mongo.
 
 ### Additional notes
 If you are running on Windows you may need to manually clone the repositories that the `clonseRepos.sh` file is cloning and run an `npm install` in each cloned repository
+
+## Adding a new service
+
+Assuming SERVICE_NAME is the name you've given the new service that you've created,
+
+```
+SERVICE_NAME:
+  container_name: SERVICE_NAME
+  image: rvrb/SERVICE_NAME:latest
+```
+Internally, the service can be accessed from other services code using SERVICE_NAME as an address.  
+If you need the service to be externally accessible, you'll need to add it to the external network and add some lables to tell traefik to own routing.  
+Note the example below enforces all access to external services requires a valid JWT token. If you want to add an externally accessible service that is publically available without any authentication, simpliy omit the label `traefik.http.routers.SERVICE_NAME.middlewares=jwt-plugin`
+```
+SERVICE_NAME:
+  container_name: SERVICE_NAME
+  image: rvrb/SERVICE_NAME:latest
+  networks:
+    - external_network
+  labels:
+    - traefik.enable=true
+    - traefik.http.routers.SERVICE_NAME.rule=Host(`SERVICE_NAME.${ROOT_DOMAIN}`)
+    - traefik.http.routers.SERVICE_NAME.middlewares=jwt-plugin
+    - traefik.http.routers.SERVICE_NAME.entrypoints=websecure
+```
