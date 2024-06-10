@@ -1,0 +1,151 @@
+services:
+  traefik:
+    container_name: traefik
+    image: traefik:latest
+    restart: unless-stopped
+    command:
+      - --providers.docker
+      - --providers.docker.exposedbydefault=false
+      - --api.insecure=true
+      - --log.level=DEBUG
+      - --entrypoints.postgres.address=:5432
+      - --entrypoints.redis.address=:6379
+      - --entrypoints.mongo.address=:27017
+      - --entrypoints.web.address=:80
+      - --metrics.influxdb2=true
+      - --metrics.influxdb2.address=http://influxdb:8086
+      - --metrics.influxdb2.token=${DOCKER_INFLUXDB_INIT_ADMIN_TOKEN}
+      - --metrics.influxdb2.org=RVRB
+      - --metrics.influxdb2.bucket=RVRB
+      - --experimental.plugins.jwt.moduleName=github.com/team-carepay/traefik-jwt-plugin
+      - --experimental.plugins.jwt.version=v0.6.0
+    env_file:
+      - ./local.env
+    networks:
+      - external_network
+    ports:
+      - 80:80
+      - 27017:27017
+      - 5432:5432
+      - 6379:6379
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./acme.json:/acme.json
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.whoami.rule=Host(`whoami.${ROOT_DOMAIN}`)
+      - traefik.http.routers.whoami.entrypoints=web
+      - traefik.http.routers.traefik.rule=Host(`traefik.${ROOT_DOMAIN}`)
+      - traefik.http.routers.traefik.service=api@internal
+      - traefik.http.routers.traefik.middlewares=authtraefik
+      - traefik.http.middlewares.authtraefik.basicauth.users=${TRAEFIK_DASHBOARD_USER}:${TRAEFIK_DASHBOARD_PASSWORD}
+      - traefik.http.middlewares.jwt-plugin.plugin.jwt.Keys[0]=${PUBLIC_KEY}
+      - traefik.http.middlewares.jwt-plugin.plugin.jwt.JwtHeaders.X-User-Id=_id
+      - traefik.http.middlewares.jwt-plugin.plugin.jwt.JwtHeaders.X-Spotify-Uri=spotifyUri
+      - traefik.http.middlewares.jwt-plugin.plugin.jwt.JwtHeaders.X-Spotify-Token=spotifyToken
+      - traefik.http.middlewares.jwt-plugin.plugin.jwt.JwtHeaders.X-Spotify-Token-Expires=spotifyTokenExpires
+      - traefik.http.middlewares.jwt-plugin.plugin.jwt.JwtHeaders.X-Country=country
+
+  portainer:
+    container_name: portainer
+    image: portainer/portainer-ce:latest
+    command: -H unix:///var/run/docker.sock
+    restart: always
+    networks:
+      - external_network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - portainer_data:/data
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.portainer.rule=Host(`portainer.${ROOT_DOMAIN}`)
+      - traefik.http.routers.portainer.entrypoints=web
+      - traefik.http.services.portainer.loadbalancer.server.port=9000
+
+  influxdb:
+    container_name: influxdb
+    image: influxdb:latest
+    restart: always
+    networks:
+      - external_network
+    volumes:
+      - influxdb-data:/var/lib/influxdb2:rw
+    env_file:
+        - ./local.env
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.influxdb.rule=host(`influxdb.${ROOT_DOMAIN}`)
+      - traefik.http.routers.influxdb.entrypoints=web
+      - traefik.http.services.influxdb.loadBalancer.server.port=8086
+
+  grafana:
+    container_name: grafana
+    image: grafana/grafana:latest
+    restart: always
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning/:/etc/grafana/provisioning/
+    networks:
+      - external_network
+    env_file:
+        - ./local.env
+    depends_on:
+      - influxdb
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.grafana.rule=host(`grafana.${ROOT_DOMAIN}`)
+      - traefik.http.routers.grafana.entryPoints=web
+      - traefik.http.services.grafana.loadBalancer.server.port=3000
+
+  telegraf:
+    container_name: telegraf
+    restart: unless-stopped
+    image: telegraf:latest
+    ports:
+      - 8092:8092
+      - 8094:8094
+      - 8125:8125/tcp
+      - 8125:8125/udp
+      - 514:514/tcp
+      - 514:514/udp
+    volumes:
+      - ./telegraf/provisioning/telegraf.conf:/etc/telegraf/telegraf.conf
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /sys:/host/sys:ro
+      - /proc:/host/proc:ro
+      - /etc:/host/etc:ro
+    pid: host
+    depends_on:
+      - influxdb
+    networks:
+      - external_network
+    env_file:
+      - ./local.env
+
+  watchtower:
+    container_name: watchtower
+    image: containrrr/watchtower
+    restart: always
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - external_network
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_REMOVE_VOLUMES=true
+      - WATCHTOWER_HTTP_API_UPDATE=true
+      - WATCHTOWER_HTTP_API_TOKEN=${WATCHTOWER_HTTP_API_TOKEN}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.watchtower.rule=host(`watchtower.${ROOT_DOMAIN}`)
+      - traefik.http.routers.watchtower.entryPoints=web
+      - traefik.http.services.watchtower.loadBalancer.server.port=8080
+
+volumes:
+  portainer_data:
+  influxdb-data:
+  grafana-data:
+
+networks:
+  external_network:
+    external: true

@@ -1,3 +1,4 @@
 .env
 acme.json
 stack.env
+local.env
