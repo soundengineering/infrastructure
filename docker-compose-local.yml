@@ -1,8 +1,6 @@
-version: '3'
-
 services:
   postgres:
-    container_name: postgres
+    container_name: rvrb2_postgres
     image: postgres
     restart: unless-stopped
     volumes:
@@ -11,6 +9,8 @@ services:
       - stack.env
     networks:
       - external_network
+    ports:
+      - 5432:5432
     labels:
       - traefik.enable=true
       - traefik.tcp.routers.postgres.entrypoints=postgres
@@ -20,13 +20,15 @@ services:
       - traefik.tcp.routers.postgres.service=postgres
       
   redis:
-    container_name: redis
+    container_name: rvrb2_redis
     image: redis
     restart: unless-stopped
     volumes:
       - redis_data:/data
     networks:
       - external_network
+    ports:
+      - 6379:6379
     labels:
       - traefik.enable=true
       - traefik.tcp.routers.redis.entrypoints=redis
@@ -36,13 +38,15 @@ services:
       - traefik.tcp.routers.redis.service=redis
 
   mongo:
-    container_name: mongo
+    container_name: rvrb2_mongo
     image: mongo
     restart: unless-stopped
     volumes:
       - mongo_data:/data
     env_file:
       - stack.env
+    ports:
+      - 27017:27017
     networks:
       - external_network
     labels:
@@ -54,7 +58,7 @@ services:
       - traefik.tcp.routers.mongo.service=mongo
 
   whoami:
-    container_name: whoami
+    container_name: rvrb2_whoami
     image: traefik/whoami
     networks:
       - external_network

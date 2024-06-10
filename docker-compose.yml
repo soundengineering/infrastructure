@@ -1,8 +1,6 @@
-version: '3'
-
 services:
   postgres:
-    container_name: postgres
+    container_name: rvrb2_postgres
     image: postgres
     restart: unless-stopped
     volumes:
@@ -20,7 +18,7 @@ services:
       - traefik.tcp.routers.postgres.service=postgres
       
   redis:
-    container_name: redis
+    container_name: rvrb2_redis
     image: redis
     restart: unless-stopped
     volumes:
@@ -36,7 +34,7 @@ services:
       - traefik.tcp.routers.redis.service=redis
 
   mongo:
-    container_name: mongo
+    container_name: rvrb2_mongo
     image: mongo
     restart: unless-stopped
     volumes:
@@ -54,7 +52,7 @@ services:
       - traefik.tcp.routers.mongo.service=mongo
 
   whoami:
-    container_name: whoami
+    container_name: rvrb2_whoami
     image: traefik/whoami
     networks:
       - external_network

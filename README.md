@@ -14,6 +14,7 @@ To run RVRB locally, follow the below steps;
 - clone this repo.
 - ensure you have [Docker](https://docs.docker.com/engine/install/) and [Docker Compose](https://docs.docker.com/compose/install/) installed.
 - ensure you have [node](https://nodejs.org/en) version 20 installed ([nvm](https://github.com/nvm-sh/nvm) is a great option to install and manage node versions).
+- create the docker network `docker network create external_network`.
 - run `./cloneRepos.sh`.
 - rename the `example.env` file to `.env` and enter values for each variable. [See Application Environment Variables](#application-environment-variables).
 - navigate into the **Host** folder.
@@ -23,6 +24,7 @@ To run RVRB locally, follow the below steps;
   - Setup your Admin login credentials.
   - following the [Portainer Initial Setup guide](https://docs.portainer.io/start/install/server/setup), create a new stack using the file upload option - uploading the *docker-compose-local.yml* found in the root directory.
 - visit https://rvrb.localhost.
+
 
 ## Host Environment Variables
 
@@ -129,3 +131,14 @@ SERVICE_NAME:
     - traefik.http.routers.SERVICE_NAME.middlewares=jwt-plugin
     - traefik.http.routers.SERVICE_NAME.entrypoints=websecure
 ```
+
+# Connecting to DBs manually
+## MongoDB
+- install mongodsh using `brew install mongosh`
+- connect `mongodh -u MONGO_INITDB_ROOT_USERNAME -p MONGO_INITDB_ROOT_PASSWORD`
+
+- install postgres utils using `brew install libpq`
+- connect `psql -h localhost -U root -W -d postgres`
+
+- install redis client using  `brew install redis`
+- connect  `redis-cli`
